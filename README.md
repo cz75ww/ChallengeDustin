@@ -39,20 +39,34 @@
 
 ## Setup
 #### To run this project, perform the command lines:
-* In the terrform root folder change the webserver01.tf according your needs.
-* in the ansible roles vars folder, change the server name into main.yaml.
-./terraform/modules/acceptance-ubuntu-vm/ansible/roles/custom_tasks/vars/main.yaml
+
 ```
-$ git clone https://github.com/cz75ww/DemoSession.git
+# Clone the repository
+$ git clone https://github.com/cz75ww/ChallengeDustin.git
+
+# Choose the environment you wanna to apply ( staging or production )
+$ cd envs/staging/
+
+# Download the AWS modules and Plugs 
 $ terraform init
+
+# Rewrite Terraform configuration files to a canonical format and style
 $ terraform fmt 
+
+# Make sure if your syntax is correct
 $ terraform validate
-$ terraform apply --auto-approve
+
+# See a preview and in case of no issue apply it
+$ terraform plan -out challenge-dustin.plan
+$ terraform apply challenge-dustin.plan
+
+# To destroy the environment
+$ terraform destroy --auto-approve
 ```
 ## Web health check script
 #### The goal of this script is to check the health of server and webpage <br/>
      script name: ./scripts/health_check.sh
-     
+
 ##### Requirements:
 * Create AWS SNS topic in order to send the email with the notification. - [CreateSNSTopic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html)
 * AWS Cli installed on job server that will be run the script. For example, linux cron job
