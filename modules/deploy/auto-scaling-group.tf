@@ -10,7 +10,7 @@ resource "aws_autoscaling_group" "asg_staging" {
   name = "fpsouza-asg-staging"
   vpc_zone_identifier = aws_subnet.private_subnet[*].id
   min_size            = 2
-  max_size            = 2
+  max_size            = 4
   health_check_type   = "ELB"
   target_group_arns   = [aws_lb_target_group.alb-target-group.arn]
 
