@@ -1,0 +1,147 @@
+pipeline {
+    agent any
+    triggers {
+    githubPush()
+  }
+
+    parameters {
+        string(name: 'environment', defaultValue: 'default', description: 'Workspace/environment file to use for deployment')
+        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+        booleanParam(name: 'autoDestroy', defaultValue: false, description: 'Destroy after Apply?')
+    }
+    
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+    }
+
+    stages {
+        stage('TerraformInit'){
+            steps {
+                sh 'terraform init'
+            }
+        }
+        stage('TerraformValidate'){
+            steps {
+                sh 'terraform validate'
+            }
+        }
+        stage('TerraformPlan'){
+            steps {
+                script {
+                        try {
+                           sh "terraform workspace new ${params.environment}"
+                        } catch (err) {
+                            sh "terraform workspace select ${params.environment}"
+                        }
+                        sh "terraform plan -out terraform-demosession.tfplan;echo \$? > status"
+                        stash name: "terraform-demosession-plan", includes: "terraform-demosession.tfplan"
+                }
+            }
+        }
+        stage('TerraformApply'){
+            steps {
+                script{
+                    def apply = false
+                    try {
+                        input message: 'confirm apply', ok: 'Apply Config'
+                        apply = true
+                    } catch (err) {
+                        apply = false
+                        {
+                            sh "terraform destroy -auto-approve"
+                        }
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                    if(apply){
+                        unstash "terraform-demosession-plan"
+                            sh 'terraform apply terraform-demosession.tfplan'
+                    }
+                }
+            }
+        }
+        // stage('TerraformDestroy'){
+        //     steps {
+        //         script{
+        //             def destroy = false
+        //             try {
+        //                 input message: 'confirm detsroy', ok: 'Destroy'
+        //                 destroy = true
+        //             } catch (err) {
+        //                 destroy = false
+        //                 {
+        //                     echo "Issue to destroy terraform"
+        //                 }
+        //             }
+        //             if(destroy){
+        //                 sh "terraform destroy -auto-approve"
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
+// pipeline {
+
+//     parameters {
+//         string(name: 'environment', defaultValue: 'terraform', description: 'Workspace/environment file to use for deployment')
+//         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+
+//     }
+
+
+//      environment {
+//         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+//         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+//     }
+
+//    agent  any
+//         options {
+//                 timestamps ()
+//                 ansiColor('xterm')
+//             }
+//     stages {
+//         stage('checkout') {
+//             steps {
+//                  script{
+//                         dir("terraform")
+//                         {
+//                             git "https://github.com/cz75ww/DemosessionASG.git"
+//                         }
+//                     }
+//                 }
+//             }
+
+//         stage('Plan') {
+//             steps {
+//                 sh 'pwd;cd terraform/DemosessionASG ; terraform init -input=false'
+//                 sh 'pwd;cd terraform/DemosessionASG ; terraform workspace new ${environment}'
+//                 sh 'pwd;cd terraform/DemosessionASG ; terraform workspace select ${environment}'
+//                 sh "pwd;cd terraform/DemosessionASG ; terraform plan -input=false -out tfplan "
+//                 sh 'pwd;cd terraform/DemosessionASG ; terraform show -no-color tfplan > tfplan.txt'
+//             }
+//         }
+//         stage('Approval') {
+//            when {
+//                not {
+//                    equals expected: true, actual: params.autoApprove
+//                }
+//            }
+
+//            steps {
+//                script {
+//                     def plan = readFile 'terraform/DemosessionASG/tfplan.txt'
+//                     input message: "Do you want to apply the plan?",
+//                     parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+//                }
+//            }
+//        }
+
+//         stage('Apply') {
+//             steps {
+//                 sh "pwd;cd terraform/DemosessionASG ; terraform apply -input=false tfplan"
+//             }
+//         }
+//     }
+
+//   }

@@ -6,6 +6,7 @@ resource "aws_autoscaling_policy" "asp_staging" {
   autoscaling_group_name = aws_autoscaling_group.asg_staging.name
 }
 
+# Bug: https://github.com/hashicorp/terraform-provider-aws/issues/5241
 resource "aws_autoscaling_group" "asg_staging" {
   name = "fpsouza-asg-staging"
   vpc_zone_identifier = aws_subnet.private_subnet[*].id

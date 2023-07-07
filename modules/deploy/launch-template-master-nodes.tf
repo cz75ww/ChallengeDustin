@@ -61,7 +61,7 @@ resource "aws_launch_template" "fpsouza_lt-staging" {
   #   market_type = "spot"
   # }
 
-  instance_type = "t2.micro" # t2.micro / t2.medium
+  instance_type = "t2.medium" # t2.micro / t2.medium
 
   network_interfaces {
     associate_public_ip_address = false
